@@ -1,11 +1,12 @@
 import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import Character from "@/components/Character";
-import { useRef } from "react";
-import { Vector3, Group } from "three"; // Importera Group för typ
+import { useEffect, useRef } from "react";
+import { Vector3, Group } from "three";
 import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
 import { useKeyboardControls } from "@react-three/drei";
 import { degToRad, MathUtils } from "three/src/math/MathUtils.js";
+import HandAndWeaponOverlay from "./HandAndWeaponOverlay";
 
 const normalizeAngle = (angle: number) => {
   while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -32,10 +33,10 @@ export default function CharacterController() {
   const { WALK_SPEED, RUN_SPEED, ROTATION_SPEED } = useControls(
     "Character Control",
     {
-      WALK_SPEED: { value: 0.8, min: 0.1, max: 4, step: 0.1 },
-      RUN_SPEED: { value: 1.6, min: 0.2, max: 12, step: 0.1 },
+      WALK_SPEED: { value: 2.8, min: 0.1, max: 4, step: 0.1 },
+      RUN_SPEED: { value: 4.6, min: 0.2, max: 12, step: 0.1 },
       ROTATION_SPEED: {
-        value: degToRad(0.5),
+        value: degToRad(5),
         min: degToRad(0.1),
         max: degToRad(5),
         step: degToRad(0.1)
@@ -55,8 +56,31 @@ export default function CharacterController() {
   const cameraLookAtWorldPosition = useRef(new Vector3());
   const cameraLookAt = useRef(new Vector3());
   const [, get] = useKeyboardControls();
+  const isClicking = useRef(false);
+  const { FOV } = useControls("Camera", {
+    FOV: { value: 75, min: 30, max: 120, step: 1 }
+  });
 
-  useFrame(({ camera }) => {
+  useEffect(() => {
+    const onMouseDown = (e) => {
+      isClicking.current = true;
+    };
+    const onMouseUp = (e) => {
+      isClicking.current = false;
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  useFrame(({ camera, mouse }) => {
+    camera.fov = FOV;
+    camera.far = 1000;
+    camera.updateProjectionMatrix();
+
     if (rb.current) {
       const vel = rb.current.linvel();
       const movement = {
@@ -70,6 +94,9 @@ export default function CharacterController() {
         movement.z = -1;
       }
       let speed = get().run ? RUN_SPEED : WALK_SPEED;
+
+      if (isClicking.current) {
+      }
 
       if (get().left) {
         movement.x = 1;
@@ -115,12 +142,12 @@ export default function CharacterController() {
 
     if (cameraPosition.current) {
       cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
-      camera.position.lerp(cameraWorldPosition.current, 0.1);
+      camera.position.lerp(cameraWorldPosition.current, 0.3);
     }
 
     if (cameraTarget.current) {
       cameraTarget.current.getWorldPosition(cameraLookAtWorldPosition.current);
-      cameraLookAt.current.lerp(cameraLookAtWorldPosition.current, 0.1);
+      cameraLookAt.current.lerp(cameraLookAtWorldPosition.current, 0.4);
 
       camera.lookAt(cameraLookAt.current);
     }
@@ -129,10 +156,17 @@ export default function CharacterController() {
   return (
     <RigidBody colliders={false} lockRotations ref={rb}>
       <group ref={container}>
-        <group ref={cameraTarget} position-z={1.5} />
-        <group ref={cameraPosition} position-y={4} position-z={-4} />
+        <group ref={cameraTarget} position-z={5} />
+        <group ref={cameraPosition} position-y={1} position-z={-2} />
         <group ref={character} />
-        <Character />
+        <HandAndWeaponOverlay>
+          <Character
+            scale={1}
+            position-y={-3.5}
+            position-z={0.5}
+            animation={"WEP_Idle"}
+          />
+        </HandAndWeaponOverlay>
       </group>
       <CapsuleCollider args={[1, 1]} />
     </RigidBody>
