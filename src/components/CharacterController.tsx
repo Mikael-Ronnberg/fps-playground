@@ -6,7 +6,6 @@ import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
 import { useKeyboardControls } from "@react-three/drei";
 import { degToRad, MathUtils } from "three/src/math/MathUtils.js";
-import HandAndWeaponOverlay from "./HandAndWeaponOverlay";
 
 const normalizeAngle = (angle: number) => {
   while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -159,14 +158,12 @@ export default function CharacterController() {
         <group ref={cameraTarget} position-z={5} />
         <group ref={cameraPosition} position-y={1} position-z={-2} />
         <group ref={character} />
-        <HandAndWeaponOverlay>
-          <Character
-            scale={1}
-            position-y={-3.5}
-            position-z={0.5}
-            animation={"WEP_Idle"}
-          />
-        </HandAndWeaponOverlay>
+        <Character
+          scale={1}
+          position-y={-3.5}
+          position-z={0.5}
+          animation={"WEP_Idle"}
+        />
       </group>
       <CapsuleCollider args={[1, 1]} />
     </RigidBody>
